@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>PulseLab</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f0f0f0; margin: 0; padding: 0; }
+        header { background-color: #2c3e50; color: white; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; }
+        header h1 { margin: 0; font-size: 1.4rem; }
+        header span { font-size: 0.85rem; color: #aaa; }
+        nav { background-color: #34495e; display: flex; gap: 4px; padding: 8px 16px; }
+        nav button { padding: 8px 18px; border: none; background: transparent; color: #ccc; cursor: pointer; font-size: 0.9rem; border-radius: 4px; }
+        nav button:hover { background-color: #2c3e50; color: white; }
+        nav button.active { background-color: #1abc9c; color: white; }
+        .section { display: none; padding: 24px; }
+        .section.active { display: block; }
+        .card { background: white; border-radius: 8px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .card h2 { margin-top: 0; font-size: 1rem; color: #2c3e50; border-bottom: 2px solid #1abc9c; padding-bottom: 8px; }
+        .ecg-layout { display: grid; grid-template-columns: 180px 1fr 160px; gap: 16px; }
+        .rhythm-list { display: flex; flex-direction: column; gap: 6px; }
+        .rhythm-btn { padding: 8px; border: 1px solid #ccc; background: white; cursor: pointer; border-radius: 4px; font-size: 0.85rem; text-align: left; }
+        .rhythm-btn:hover { border-color: #1abc9c; color: #1abc9c; }
+        .rhythm-btn.active { background: #1abc9c; color: white; border-color: #1abc9c; }
+        .ecg-box { background: #111; border-radius: 8px; position: relative; height: 220px; }
+        .ecg-box canvas { width: 100%; height: 100%; display: block; border-radius: 8px; }
+        .ecg-label { position: absolute; top: 8px; left: 12px; color: #aaa; font-size: 0.7rem; }
+        .ecg-small-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .ecg-small { background: #111; border-radius: 6px; height: 80px; position: relative; }
+        .ecg-small canvas { width: 100%; height: 100%; display: block; border-radius: 6px; }
+        .ecg-small .ecg-label { font-size: 0.65rem; top: 5px; left: 8px; }
+        .slider-group { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+        .slider-group label { font-size: 0.82rem; color: #555; }
+        .slider-group input { width: 100%; }
+        .btn-group { display: flex; gap: 8px; margin-top: 12px; }
+        .btn { padding: 8px 14px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer; font-size: 0.82rem; }
+        .btn:hover { background: #eee; }
+        .btn.danger { border-color: #e74c3c; color: #e74c3c; }
+        .btn.primary { background: #1abc9c; color: white; border-color: #1abc9c; }
+        .btn.examen { background: #9b59b6; color: white; border-color: #9b59b6; }
+        .status-bar { background: white; border-radius: 6px; padding: 8px 16px; margin-top: 10px; display: flex; gap: 24px; font-size: 0.78rem; color: #555; box-shadow: 0 1px 4px rgba(0,0,0,0.08); flex-wrap: wrap; }
+        .status-bar b { color: #1abc9c; }
+        .vitals-col { display: flex; flex-direction: column; gap: 10px; }
+        .vital { background: white; border-radius: 8px; padding: 10px 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.1); text-align: center; }
+        .vital .label { font-size: 0.68rem; color: #888; }
+        .vital .value { font-size: 1.6rem; font-weight: bold; }
+        .vital .unit { font-size: 0.65rem; color: #aaa; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        th { text-align: left; padding: 8px; background: #f8f8f8; color: #555; font-weight: 600; }
+        td { padding: 8px; border-bottom: 1px solid #eee; }
+        .badge { padding: 2px 8px; border-radius: 10px; font-size: 0.72rem; }
+        .badge.ok { background: #d5f5e3; color: #1e8449; }
+        .badge.warn { background: #fef9e7; color: #d68910; }
+        .badge.exam { background: #f4ecf7; color: #8e44ad; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .form-grid label { display: flex; flex-direction: column; font-size: 0.8rem; color: #555; gap: 4px; }
+        .form-grid input, .form-grid select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 0.85rem; }
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .diag-box { background: #fdf6ff; border: 1px solid #d2b4de; border-radius: 8px; padding: 14px; margin-top: 12px; }
+        .error-banner { background:#fadbd8; color:#c0392b; padding:10px 24px; font-size:0.85rem; }
+        .edu-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+        .wave-card { background: white; border-radius: 8px; padding: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+        .wave-letter { font-size: 2.5rem; font-weight: bold; margin-bottom: 6px; }
+        .wave-card.p .wave-letter { color: #3498db; }
+        .wave-card.qrs .wave-letter { color: #1abc9c; }
+        .wave-card.t .wave-letter { color: #f39c12; }
+        .wave-card h3 { font-size: 0.8rem; color: #888; margin: 0 0 10px; text-transform: uppercase; }
+        .wave-card p { font-size: 0.82rem; color: #444; line-height: 1.6; }
+        .wave-info { margin-top: 10px; font-size: 0.78rem; color: #666; }
+        .wave-info div { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid #f0f0f0; }
+        .interval-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px; }
+        .interval-card { background: white; border-radius: 8px; padding: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+        .interval-card h4 { margin: 0 0 6px; font-size: 0.78rem; color: #888; text-transform: uppercase; }
+        .interval-card .ival { font-size: 1.2rem; font-weight: bold; color: #8e44ad; margin-bottom: 6px; }
+        .interval-card p { font-size: 0.78rem; color: #666; line-height: 1.5; margin: 0; }
+        .alarm-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; border: 4px solid red; animation: flash 0.5s infinite; z-index: 999; }
+        .alarm-overlay.active { display: block; }
+        @keyframes flash { 0%,100%{opacity:1} 50%{opacity:0.1} }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🫀 PulseLab — Simulador ECG</h1>
+    <span>Panel de control</span>
+</header>
+
+<div th:if="${error}" class="error-banner">
+    ⚠ <span th:text="${error}"></span>
+</div>
+
+<nav>
+    <button class="active" onclick="showTab('ecg', this)">Simulador ECG</button>
+    <button onclick="showTab('pacientes', this)">Pacientes</button>
+    <button onclick="showTab('medicos', this)">Médicos</button>
+    <button onclick="showTab('educacion', this)">Guía de Ondas</button>
+</nav>
+
+<!-- ECG -->
+<div id="tab-ecg" class="section active">
+    <div class="ecg-layout">
+        <div class="card">
+            <h2>Controles manuales</h2>
+            <p style="font-size:0.75rem;color:#999">Estos botones cambian la vista, no afectan el diagnóstico del paciente.</p>
+            <div class="rhythm-list">
+                <button class="rhythm-btn" onclick="setRhythm('normal',this)">Sinusal Normal</button>
+                <button class="rhythm-btn" onclick="setRhythm('tachy',this)">Taquicardia</button>
+                <button class="rhythm-btn" onclick="setRhythm('brady',this)">Bradicardia</button>
+                <button class="rhythm-btn" onclick="setRhythm('afib',this)">Fibrilación A.</button>
+                <button class="rhythm-btn" onclick="setRhythm('vfib',this)">Fibrilación V.</button>
+                <button class="rhythm-btn" onclick="setRhythm('pvc',this)">PVC</button>
+                <button class="rhythm-btn" onclick="setRhythm('block',this)">Bloqueo AV III</button>
+            </div>
+            <div class="slider-group">
+                <label>Amplitud: <b id="amp-val">1.0</b>x</label>
+                <input type="range" min="2" max="20" value="10" oninput="updateAmp(this.value)">
+                <label>Ruido: <b id="noise-val">0</b>%</label>
+                <input type="range" min="0" max="20" value="0" oninput="updateNoise(this.value)">
+            </div>
+            <div class="btn-group">
+                <button class="btn" onclick="togglePause()" id="pause-btn">⏸ Pausar</button>
+                <button class="btn danger" onclick="triggerAlarm()">⚠ Alarma</button>
+            </div>
+        </div>
+
+        <div>
+            <div class="ecg-box">
+                <div class="ecg-label">Derivación II — 25mm/s</div>
+                <canvas id="ecg-main"></canvas>
+            </div>
+            <div class="ecg-small-row">
+                <div class="ecg-small"><div class="ecg-label">I</div><canvas id="ecg-I"></canvas></div>
+                <div class="ecg-small"><div class="ecg-label">aVR</div><canvas id="ecg-aVR"></canvas></div>
+                <div class="ecg-small"><div class="ecg-label">V1</div><canvas id="ecg-V1"></canvas></div>
+            </div>
+            <div class="status-bar">
+                <div>Paciente activo: <b th:text="${paciente != null ? paciente.nombre : 'Ninguno'}">—</b></div>
+                <div th:if="${paciente != null and !paciente.modoExamen}">
+                    Ritmo real: <b th:text="${paciente.ritmoAsignado}">—</b>
+                </div>
+                <div th:if="${paciente != null and paciente.modoExamen and !paciente.diagnosticado}">
+                    <b style="color:#9b59b6">🎓 MODO EXAMEN — diagnóstico oculto</b>
+                </div>
+                <div th:if="${paciente != null and paciente.diagnosticado}">
+                    Resultado:
+                    <b th:if="${paciente.diagnosticoCorrecto}" style="color:#27ae60">✔ Correcto</b>
+                    <b th:unless="${paciente.diagnosticoCorrecto}" style="color:#e74c3c">✘ Incorrecto (era: <span th:text="${paciente.ritmoAsignado}"></span>)</b>
+                </div>
+            </div>
+
+            <div class="diag-box" th:if="${paciente != null and paciente.modoExamen and !paciente.diagnosticado}">
+                <b>🩺 ¿Cuál es tu diagnóstico para este paciente?</b>
+                <form action="/diagnosticar" method="post" style="margin-top:8px;display:flex;gap:8px">
+                    <input type="hidden" name="nombre" th:value="${paciente.nombre}">
+                    <input type="text" name="respuesta" placeholder="Ej: Taquicardia, Fibrilación Auricular..." style="flex:1;padding:8px;border:1px solid #ccc;border-radius:4px" required>
+                    <button type="submit" class="btn examen">Enviar diagnóstico</button>
+                </form>
+            </div>
+
+            <div class="card" th:if="${paciente != null}" style="margin-top:12px">
+                <h2>🤖 Asistente Médico IA</h2>
+                <p style="font-size:0.78rem;color:#999">Recomendaciones de cuidado según el ritmo cardíaco diagnosticado. Herramienta educativa, no reemplaza criterio médico real.</p>
+                <form action="/recomendacion-ia" method="post">
+                    <input type="hidden" name="nombre" th:value="${paciente.nombre}">
+                    <button type="submit" class="btn primary">💡 Generar recomendación</button>
+                </form>
+                <div th:if="${recomendacionIA}" style="margin-top:12px;background:#f4fcf9;border:1px solid #1abc9c;border-radius:6px;padding:12px;font-size:0.85rem;color:#333">
+                    <span th:text="${recomendacionIA}"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="vitals-col">
+            <div class="vital"><div class="label">FC</div><div class="value" id="v-hr" style="color:#1abc9c" th:text="${corazon.frecuenciaCardiaca}">72</div><div class="unit">bpm</div></div>
+            <div class="vital"><div class="label">SpO₂</div><div class="value" id="v-spo2" style="color:#3498db">98</div><div class="unit">%</div></div>
+            <div class="vital"><div class="label">NIBP</div><div class="value" style="color:#f39c12;font-size:1.1rem">120/80</div><div class="unit">mmHg</div></div>
+            <div class="vital"><div class="label">FR</div><div class="value" style="color:#9b59b6">16</div><div class="unit">rpm</div></div>
+            <div class="vital"><div class="label">Temp</div><div class="value" style="color:#e67e22">36.7</div><div class="unit">°C</div></div>
+        </div>
+    </div>
+</div>
+
+<!-- PACIENTES -->
+<div id="tab-pacientes" class="section">
+    <div class="two-col">
+        <div class="card">
+            <h2>Modo Profesor — Elegir ritmo manualmente</h2>
+            <form action="/agregar-paciente" method="post">
+                <div class="form-grid">
+                    <label>Nombre <input type="text" name="nombre" required></label>
+                    <label>Apellido <input type="text" name="apellido" required></label>
+                    <label>Edad <input type="number" name="edad" required></label>
+                    <label>Género
+                        <select name="genero">
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                        </select>
+                    </label>
+                    <label>Peso (kg) <input type="number" step="0.1" name="peso" required></label>
+                    <label>Altura (cm) <input type="number" step="0.1" name="altura" required></label>
+                    <label>Médico asignado
+                        <select name="matriculaMedico" required>
+                            <option th:each="m : ${medicos}" th:value="${m.matricula}"
+                                    th:text="${'Dr. ' + m.nombre + ' ' + m.apellido + ' (' + m.matricula + ')'}"></option>
+                        </select>
+                    </label>
+                    <label>Ritmo / Condición
+                        <select name="ritmo" required>
+                            <option value="NORMAL">Sinusal Normal</option>
+                            <option value="TAQUICARDIA">Taquicardia</option>
+                            <option value="BRADICARDIA">Bradicardia</option>
+                            <option value="FIBRILACION_AURICULAR">Fibrilación Auricular</option>
+                            <option value="FIBRILACION_VENTRICULAR">Fibrilación Ventricular</option>
+                            <option value="PVC">PVC</option>
+                            <option value="BLOQUEO_AV">Bloqueo AV III</option>
+                        </select>
+                    </label>
+                </div>
+                <button type="submit" class="btn primary" style="margin-top:14px">Agregar Paciente (Profesor)</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Modo Examen — Diagnóstico oculto</h2>
+            <p style="font-size:0.85rem;color:#666">Se le asigna un ritmo al azar. El estudiante debe identificarlo viendo el ECG.</p>
+            <form action="/agregar-paciente-examen" method="post">
+                <div class="form-grid">
+                    <label>Nombre <input type="text" name="nombre" required></label>
+                    <label>Apellido <input type="text" name="apellido" required></label>
+                    <label>Edad <input type="number" name="edad" required></label>
+                    <label>Género
+                        <select name="genero">
+                            <option value="M">Masculino</option>
+                            <option value="F">Femenino</option>
+                        </select>
+                    </label>
+                    <label>Peso (kg) <input type="number" step="0.1" name="peso" required></label>
+                    <label>Altura (cm) <input type="number" step="0.1" name="altura" required></label>
+                    <label>Médico asignado
+                        <select name="matriculaMedico" required>
+                            <option th:each="m : ${medicos}" th:value="${m.matricula}"
+                                    th:text="${'Dr. ' + m.nombre + ' ' + m.apellido + ' (' + m.matricula + ')'}"></option>
+                        </select>
+                    </label>
+                </div>
+                <button type="submit" class="btn examen" style="margin-top:14px">🎲 Generar Paciente (Examen)</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Lista de Pacientes</h2>
+        <table>
+            <thead><tr><th>Nombre</th><th>Edad</th><th>Tipo</th><th>Estado</th><th>Acción</th></tr></thead>
+            <tbody>
+                <tr th:each="p : ${pacientes}">
+                    <td th:text="${p.nombre}">—</td>
+                    <td th:text="${p.edad}">—</td>
+                    <td>
+                        <span th:if="${p.modoExamen}" class="badge exam">Examen</span>
+                        <span th:unless="${p.modoExamen}" class="badge ok">Profesor</span>
+                    </td>
+                    <td>
+                        <span th:if="${p.modoExamen and !p.diagnosticado}" class="badge warn">Pendiente</span>
+                        <span th:if="${p.diagnosticado and p.diagnosticoCorrecto}" class="badge ok">✔ Correcto</span>
+                        <span th:if="${p.diagnosticado and !p.diagnosticoCorrecto}" class="badge warn">✘ Incorrecto</span>
+                        <span th:unless="${p.modoExamen}">—</span>
+                    </td>
+                    <td>
+                        <form action="/activar-paciente" method="post" style="display:inline">
+                            <input type="hidden" name="nombre" th:value="${p.nombre}">
+                            <button type="submit" class="btn" style="padding:4px 10px">Ver ECG</button>
+                        </form>
+                        <form action="/eliminar-paciente" method="post" style="display:inline" onsubmit="return confirm('¿Eliminar este paciente?');">
+                            <input type="hidden" name="id" th:value="${p.id}">
+                            <button type="submit" class="btn danger" style="padding:4px 10px">Eliminar</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- MÉDICOS -->
+<div id="tab-medicos" class="section">
+    <div class="two-col">
+        <div class="card">
+            <h2>Agregar Médico</h2>
+            <form action="/agregar-medico" method="post">
+                <div class="form-grid">
+                    <label>Nombre <input type="text" name="nombre" required></label>
+                    <label>Apellido <input type="text" name="apellido" required></label>
+                    <label>Matrícula <input type="text" name="matricula" required></label>
+                    <label>Especialidad <input type="text" name="especialidad" required></label>
+                </div>
+                <button type="submit" class="btn primary" style="margin-top:14px">Agregar Médico</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Lista de Médicos</h2>
+            <table>
+                <thead><tr><th>Nombre</th><th>Matrícula</th><th>Especialidad</th><th>Pacientes</th></tr></thead>
+                <tbody>
+                    <tr th:each="m : ${medicos}">
+                        <td th:text="${'Dr. ' + m.nombre + ' ' + m.apellido}">—</td>
+                        <td th:text="${m.matricula}">—</td>
+                        <td th:text="${m.especialidad}">—</td>
+                        <td><span class="badge ok" th:text="${m.pacientes.size()}">0</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- EDUCACIÓN -->
+<div id="tab-educacion" class="section">
+    <div class="edu-grid">
+        <div class="wave-card p">
+            <div class="wave-letter">P</div>
+            <h3>Despolarización Auricular</h3>
+            <p>Representa la activación eléctrica de las aurículas. El nodo sinusal genera el impulso que se propaga provocando su contracción.</p>
+            <div class="wave-info">
+                <div><span>Duración</span><span>80 – 120 ms</span></div>
+                <div><span>Amplitud</span><span>≤ 0.25 mV</span></div>
+                <div><span>Ausente en</span><span>Fibrilación A.</span></div>
+            </div>
+        </div>
+        <div class="wave-card qrs">
+            <div class="wave-letter">QRS</div>
+            <h3>Despolarización Ventricular</h3>
+            <p>La señal más prominente del ECG. Representa la contracción de ambos ventrículos a través del sistema His-Purkinje.</p>
+            <div class="wave-info">
+                <div><span>Duración</span><span>60 – 100 ms</span></div>
+                <div><span>Amplitud R</span><span>5 – 25 mm</span></div>
+                <div><span>Ancho en PVC</span><span>> 120 ms</span></div>
+            </div>
+        </div>
+        <div class="wave-card t">
+            <div class="wave-letter">T</div>
+            <h3>Repolarización Ventricular</h3>
+            <p>Refleja la recuperación eléctrica de los ventrículos. Alteraciones pueden indicar isquemia o hipercalemia.</p>
+            <div class="wave-info">
+                <div><span>Duración</span><span>100 – 250 ms</span></div>
+                <div><span>Invertida en</span><span>Isquemia, HVI</span></div>
+                <div><span>Picuda en</span><span>Hipercalemia</span></div>
+            </div>
+        </div>
+    </div>
+    <div class="interval-row">
+        <div class="interval-card"><h4>Intervalo PR</h4><div class="ival">120 – 200 ms</div><p>Conducción desde la aurícula hasta el ventrículo. Prolongado en bloqueo AV.</p></div>
+        <div class="interval-card"><h4>Intervalo QT</h4><div class="ival">350 – 440 ms</div><p>Sístole ventricular completa. QT largo aumenta riesgo de arritmias graves.</p></div>
+        <div class="interval-card"><h4>Segmento ST</h4><div class="ival">Isoeléctrico</div><p>Elevado en infarto agudo. Deprimido en isquemia subendocárdica.</p></div>
+    </div>
+</div>
+
+<div class="alarm-overlay" id="alarm-overlay"></div>
+
+<script th:inline="javascript">
+function showTab(id, btn) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    btn.classList.add('active');
+}
+
+const rhythmMap = { NORMAL:'normal', TAQUICARDIA:'tachy', BRADICARDIA:'brady', FIBRILACION_AURICULAR:'afib', FIBRILACION_VENTRICULAR:'vfib', PVC:'pvc', BLOQUEO_AV:'block' };
+const ritmoReal = /*[[${corazon.ritmo != null ? corazon.ritmo.tipo : 'NORMAL'}]]*/ 'NORMAL';
+
+const rhythmNames = { normal:'Sinusal Normal', tachy:'Taquicardia', brady:'Bradicardia', afib:'Fibrilación Auricular', vfib:'Fibrilación Ventricular', pvc:'PVC', block:'Bloqueo AV III' };
+const rhythmHR = { normal:72, tachy:140, brady:42, afib:110, vfib:260, pvc:72, block:40 };
+
+let rhythm = rhythmMap[ritmoReal] || 'normal';
+let HR = rhythmHR[rhythm];
+let amplitude=1.0, noiseLevel=0, paused=false, phase=0, t=0;
+
+const canvases = { main:document.getElementById('ecg-main'), I:document.getElementById('ecg-I'), aVR:document.getElementById('ecg-aVR'), V1:document.getElementById('ecg-V1') };
+const ctxs = {};
+for (const [k,c] of Object.entries(canvases)) ctxs[k] = c.getContext('2d');
+const TRAIL = {};
+
+function resizeCanvases() { for (const [k,c] of Object.entries(canvases)) { c.width=c.offsetWidth; c.height=c.offsetHeight; } }
+window.addEventListener('resize', resizeCanvases);
+setTimeout(resizeCanvases, 100);
+
+function gaussian(x,mu,sigma) { return Math.exp(-0.5*((x-mu)/sigma)**2); }
+
+function ecgSample(phi, r, amp) {
+    let y=0;
+    if (r==='vfib') return amp*0.5*Math.sin(phi*25+Math.sin(phi*7)*2)*(0.8+0.2*Math.sin(phi*13));
+    if (r==='afib') { y+=0.04*amp*(Math.sin(phi*80)+Math.sin(phi*130+1.2)); y-=0.12*amp*gaussian(phi,0.25,0.008); y+=1.0*amp*gaussian(phi,0.28,0.012); y-=0.15*amp*gaussian(phi,0.31,0.008); y+=0.15*amp*gaussian(phi,0.45,0.05); return y; }
+    if (r==='block') { y+=0.15*amp*gaussian(phi,0.08,0.025); if (Math.floor(phase*3)%3!==2) { y-=0.12*amp*gaussian(phi,0.32,0.008); y+=1.0*amp*gaussian(phi,0.35,0.012); y-=0.15*amp*gaussian(phi,0.38,0.008); y+=0.22*amp*gaussian(phi,0.55,0.045); } return y; }
+    if (r==='pvc' && Math.floor(phase*3)%4===3) { y-=0.3*amp*gaussian(phi,0.2,0.02); y+=1.4*amp*gaussian(phi,0.28,0.025); y-=0.4*amp*gaussian(phi,0.36,0.02); y-=0.3*amp*gaussian(phi,0.52,0.06); return y; }
+    y+=0.15*amp*gaussian(phi,0.12,0.025); y-=0.12*amp*gaussian(phi,0.22,0.008); y+=1.0*amp*gaussian(phi,0.25,0.012); y-=0.15*amp*gaussian(phi,0.28,0.008); y+=0.25*amp*gaussian(phi,0.45,0.045);
+    return y;
+}
+
+function initTrail(id,w) { TRAIL[id]={pts:new Float32Array(w).fill(NaN),head:0}; }
+
+function drawECG(ctx, canvas, tfn, scale) {
+    const W=canvas.width, H=canvas.height;
+    if (!TRAIL[canvas.id]||TRAIL[canvas.id].pts.length!==W) initTrail(canvas.id,W);
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle='#111'; ctx.fillRect(0,0,W,H);
+    const raw=ecgSample(phase%1,rhythm,amplitude);
+    const noise=noiseLevel>0?(Math.random()-0.5)*noiseLevel*0.02:0;
+    const tr=TRAIL[canvas.id];
+    tr.pts[tr.head]=H/2-tfn(raw+noise)*(H/2)*0.75*scale;
+    tr.head=(tr.head+1)%W;
+    ctx.strokeStyle='#00e676'; ctx.lineWidth=scale===1?1.5:1; ctx.lineJoin='round';
+    ctx.beginPath(); let started=false;
+    for (let i=0;i<W;i++) { const idx=(tr.head+i)%W, v=tr.pts[idx]; if (isNaN(v)) continue; if (!started){ctx.moveTo(i,v);started=true;}else ctx.lineTo(i,v); }
+    ctx.stroke();
+    ctx.fillStyle='#111'; ctx.fillRect(tr.head,0,18,H);
+}
+
+let lastTime=0;
+function loop(ts) {
+    requestAnimationFrame(loop);
+    if (paused) return;
+    const dt=Math.min((ts-lastTime)/1000,0.05); lastTime=ts;
+    phase+=(HR/60)*(rhythm==='afib'?(1+0.15*Math.sin(t*3.7)):1)*dt; t+=dt;
+    drawECG(ctxs.main,canvases.main,y=>y,1);
+    drawECG(ctxs.I,canvases.I,y=>y*0.75,0.65);
+    drawECG(ctxs.aVR,canvases.aVR,y=>-y*0.9,0.65);
+    drawECG(ctxs.V1,canvases.V1,y=>-y*0.5,0.65);
+}
+requestAnimationFrame(ts=>{lastTime=ts;loop(ts);});
+
+function setRhythm(r,btn) { rhythm=r; HR=rhythmHR[r]; document.querySelectorAll('.rhythm-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); for (const [k,c] of Object.entries(canvases)) initTrail(c.id,c.width||100); phase=0; }
+function updateAmp(v){amplitude=v/10;document.getElementById('amp-val').textContent=amplitude.toFixed(1);}
+function updateNoise(v){noiseLevel=parseInt(v);document.getElementById('noise-val').textContent=v;}
+function togglePause(){paused=!paused;document.getElementById('pause-btn').textContent=paused?'▶ Reanudar':'⏸ Pausar';}
+let alarmOn=false;
+function triggerAlarm(){alarmOn=!alarmOn;document.getElementById('alarm-overlay').classList.toggle('active',alarmOn);}
+</script>
+</body>
+</html>
