@@ -64,7 +64,7 @@ public class Paciente implements Diagnosticable {
         this.diagnosticoCorrecto = false;
     }
 
-    // ── Implementación de Diagnosticable ──────────────────────────────
+    //Implementación de Diagnosticable
     @Override
     public boolean evaluarDiagnostico(String respuestaEstudiante) {
         this.respuestaEstudiante = respuestaEstudiante;

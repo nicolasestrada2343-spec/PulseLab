@@ -2,10 +2,6 @@ package com.pulselab.model;
 
 import jakarta.persistence.Embeddable;
 
-/**
- * Conjunto de signos vitales de un paciente.
- * Se persiste embebido dentro de la tabla "pacientes" (no es una entidad propia).
- */
 @Embeddable
 public class SignosVitales {
 
